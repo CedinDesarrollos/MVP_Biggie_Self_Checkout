@@ -1,0 +1,1 @@
+# Aquí puedes definir tus modelos si usas base de datos más adelante
