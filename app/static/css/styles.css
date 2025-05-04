@@ -1,2 +1,55 @@
-/* Custom styles */
-body { background-color: #f8f9fa; }
+/* Base de colores */
+:root {
+    --color-rojo: #D90429;
+    --color-fondo: #FFFFFF;
+    --color-texto: #212529;
+    --color-borde: #E9ECEF;
+  }
+  
+  /* Estilo general */
+  body {
+    background-color: var(--color-fondo);
+    color: var(--color-texto);
+    font-family: 'Segoe UI', sans-serif;
+  }
+  
+  /* Navbar */
+  .navbar {
+    background-color: var(--color-rojo);
+  }
+  
+  .navbar .navbar-brand {
+    color: #fff;
+    font-weight: bold;
+  }
+  
+  /* Botones */
+  .btn-rojo {
+    background-color: var(--color-rojo);
+    color: #fff;
+    border: none;
+  }
+  
+  .btn-rojo:hover {
+    background-color: #b90323;
+    color: #fff;
+  }
+  
+  /* Cards, bordes y tablas */
+  .card, .table {
+    border: 1px solid var(--color-borde);
+  }
+  
+  /* Links */
+  a {
+    color: var(--color-rojo);
+  }
+  a:hover {
+    color: #b90323;
+  }
+  
+  /* Layout específico para móviles */
+  .container {
+    padding-bottom: 5rem;
+  }
+  

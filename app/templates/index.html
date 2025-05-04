@@ -1,3 +1,27 @@
 {% extends 'base.html' %}
+
 {% block title %}Inicio{% endblock %}
-{% block content %}<h3>Inicio</h3>{% endblock %}
+
+{% block content %}
+<div class="mt-4">
+  <h4 class="text-center mb-4">👋 Bienvenido a Biggie Self Checkout</h4>
+
+  <div class="card mb-4">
+    <div class="card-body">
+      <h5 class="card-title">📘 ¿Cómo funciona?</h5>
+      <ol class="ps-3">
+        <li><strong>Self Checkout:</strong> Escaneá los productos con tu cámara y agregalos a tu carrito. Podés editar cantidades y ver el total antes de pagar.</li>
+        <li><strong>Historial de Compras:</strong> Consultá todas tus compras anteriores y mirá el detalle de cada una.</li>
+        <li><strong>Mis Datos:</strong> Revisá y actualizá tu información como nombre, teléfono y preferencias.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="d-grid gap-3">
+    <a href="{{ url_for('main.checkout') }}" class="btn btn-rojo">🛒 Empezar Self Checkout</a>
+    <a href="{{ url_for('main.historico') }}" class="btn btn-outline-secondary">📑 Ver Historial</a>
+    <a href="{{ url_for('main.perfil') }}" class="btn btn-outline-secondary">👤 Mis Datos</a>
+  </div>
+
+</div>
+{% endblock %}

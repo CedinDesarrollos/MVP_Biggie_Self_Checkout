@@ -1,24 +1,46 @@
 <!DOCTYPE html>
-<html lang='es'>
+<html lang="es">
 <head>
-  <meta charset='UTF-8'>
-  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}App{% endblock %}</title>
-  <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css' rel='stylesheet'>
-  <link href='{{ url_for('static', filename='css/styles.css') }}' rel='stylesheet'>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
   {% block head_extra %}{% endblock %}
 </head>
-<body class='bg-light'>
-  <nav class='navbar navbar-expand-lg navbar-dark bg-primary sticky-top'>
-    <div class='container-fluid'>
-      <a class='navbar-brand' href='/'>🛒 Mi App</a>
+<body>
+
+  <!-- Navbar superior -->
+  <nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container-fluid">
+      <button class="btn text-white me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#menuLateral">
+        ☰
+      </button>
+      <a class="navbar-brand" href="/">🛒 Biggie</a>
     </div>
   </nav>
-  <div class='container mt-3'>
+
+  <!-- Menú lateral -->
+  <div class="offcanvas offcanvas-start" tabindex="-1" id="menuLateral">
+    <div class="offcanvas-header">
+      <h5 class="offcanvas-title">Menú</h5>
+      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+      <a href="{{ url_for('main.checkout') }}" class="btn btn-rojo mb-2">🛒 Self Checkout</a>
+      <a href="{{ url_for('main.historico') }}" class="btn btn-rojo mb-2">📑 Historial de Compras</a>
+      <a href="{{ url_for('main.perfil') }}" class="btn btn-rojo mb-2">👤 Datos del Cliente</a>
+    </div>
+  </div>
+
+  <!-- Contenido principal -->
+  <div class="container mt-3">
     {% block content %}{% endblock %}
   </div>
+
   {% block scripts %}
-  <script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js'></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   {% endblock %}
 </body>
 </html>
