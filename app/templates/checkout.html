@@ -72,7 +72,37 @@
     opacity: 1;
   }
 
+/* 1) Botones “+” y “–” con tu rojo de marca */
+#carrito-table .btn-outline-secondary {
+  border-color: var(--color-rojo);
+  color: var(--color-rojo);
+}
+#carrito-table .btn-outline-secondary:hover {
+  background-color: var(--color-rojo);
+  color: #fff;
+}
 
+/* 2) Líneas sutiles en filas */
+#carrito-table tbody tr {
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* 3) Destacar fila donde cambias cantidad */
+#carrito-table tbody tr:focus-within {
+  background-color: rgba(227,0,27,0.05);
+}
+
+/* Quita la clase table-dark del <thead> en el HTML y aplica este estilo: */
+#carrito-table thead {
+  background-color: var(--color-rojo);
+  color: #fff;
+  border-color: var(--color-rojo);
+}
+
+/* Opcional: para que el footer también lleve un ligero borde rojo */
+#carrito-table tfoot {
+  border-top: 2px solid var(--color-rojo);
+}
 </style>
 {% endblock %}
 
@@ -101,99 +131,358 @@
     <div id="reader" style="width: 100%; height: 100%;"></div>
   </div>
 
+  <!-- Botones de control y nuevo botón de ingreso manual -->
   <div class="d-grid gap-2">
     <button id="btn-start" class="btn btn-rojo btn-scan">Iniciar escaneo</button>
     <button id="btn-stop" class="btn btn-stop btn-scan d-none">Detener escaneo</button>
+    <button id="btn-manual" class="btn btn-secondary btn-scan mt-2">Ingresar Código Manualmente</button>
   </div>
 
   <div id="scan-result" class="alert alert-info d-none text-center">Esperando escaneo...</div>
+
+  <!-- Modal para ingreso manual -->
+  <div class="modal fade" id="manualModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ingresar Código Manualmente</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="manual-code" class="form-control" placeholder="Ingrese código de barras...">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-rojo" onclick="agregarProductoManual()">Agregar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4  mt-3">
+  <div class="card-header text-white d-flex align-items-center" 
+       style="background-color: #d90429">
+    <i class="bi bi-cart3 me-2"></i>
+    <span>Carrito</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table id="carrito-table" 
+             class="table table-sm align-middle mb-0">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Producto</th>
+            <th scope="col" class="text-end">Precio</th>
+            <th scope="col" class="text-center">Cant.</th>
+            <th scope="col" class="text-end">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="carrito-items">
+          <!-- renderizarCarrito() inyecta aquí -->
+        </tbody>
+        <tfoot class="fw-bold border-top">
+          <tr>
+            <td colspan="4" class="text-end">Total</td>
+            <td id="carrito-total" class="text-end"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal en tu body -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteLabel">Eliminar producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        ¿Deseas eliminar este producto del carrito?
+      </div>
+      <div class="modal-footer">
+        <button id="cancelDeleteBtn" type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+        <button id="confirmDeleteBtn" type="button" class="btn btn-danger" data-bs-dismiss="modal">
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 {{ super() }}
+
 <script src="{{ url_for('static', filename='libs/html5-qrcode.min.js') }}"></script>
+
 <script>
-  let html5Qr;
-  let scanning = false;
 
-  const startButton = document.getElementById("btn-start");
-  const stopButton = document.getElementById("btn-stop");
-  const resultBox = document.getElementById("scan-result");
+// Definir los botones y elementos
+const startButton = document.getElementById("btn-start");
+const stopButton = document.getElementById("btn-stop");
+const manualButton = document.getElementById("btn-manual");
+const resultBox = document.getElementById("scan-result");
+const barcodePlaceholder = document.getElementById("barcode-placeholder");
 
-  function obtenerNombreProducto(codigo) {
-    const mockProductos = {
-      "123456789": "Coca-Cola 500ml",
-      "987654321": "Pepsi Light 1L",
-      "111222333": "Yerba Mate Kurupí"
-    };
-    return mockProductos[codigo] || `Producto ${codigo}`;
+const confirmBtn = document.getElementById('confirmDeleteBtn');
+const cancelBtn  = document.getElementById('cancelDeleteBtn');
+const modalEl    = document.getElementById('confirmDeleteModal');
+
+const productos = {{ productos | tojson }};
+let carrito = [];
+let escaneando = false; // Controla si se está escaneando
+let html5Qr;
+let scanning = false;
+let pendingIndex = null;
+
+// Agregar producto al carrito
+function agregarAlCarrito(producto) {
+  const existente = carrito.find(p => p.upc === producto.upc);
+  if (existente) {
+    existente.cantidad += 1;
+  } else {
+    carrito.push({
+      upc: producto.upc,
+      name: producto.name,
+      price: producto.price,
+      cantidad: 1
+    });
   }
+  renderizarCarrito();
+}
 
-  function mostrarAlertaProducto(nombreProducto) {
-    const alerta = document.getElementById("product-added");
-    const backdrop = document.getElementById("product-added-backdrop");
-    const spanNombre = document.getElementById("product-name");
+// Renderizar carrito
+function renderizarCarrito() {
+  const cont = document.getElementById("carrito-items");
+  cont.innerHTML = "";
+  let total = 0;
 
-    spanNombre.textContent = nombreProducto;
-
-    alerta.classList.remove("d-none");
-    backdrop.style.display = "block";
-    setTimeout(() => alerta.classList.add("show"), 10);  // activar animación
-
-    setTimeout(() => {
-        alerta.classList.remove("show");
-        setTimeout(() => {
-        alerta.classList.add("d-none");
-        backdrop.style.display = "none";
-        }, 400);
-    }, 2000);
-  }
-
-  function onScanSuccess(decodedText, decodedResult) {
-    resultBox.textContent = `Código escaneado: ${decodedText}`;
-    resultBox.classList.remove("d-none");
-
-    const nombreProducto = obtenerNombreProducto(decodedText);
-    mostrarAlertaProducto(nombreProducto);
-  }
-
-  function startScan() {
-    document.getElementById("barcode-placeholder").style.display = "none";
-    document.getElementById("barcode-placeholder").style.visibility = "hidden";
-    html5Qr = new Html5Qrcode("reader");
-    html5Qr.start(
-      { facingMode: "environment" },
-      {
-        fps: 10,
-        qrbox: function(viewfinderWidth, viewfinderHeight) {
-          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          return { width: minEdge * 0.75, height: minEdge * 0.95 };
+  carrito.forEach((p,i) => {
+    total += p.price * p.cantidad;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${p.name}</td>
+      <td class="text-end">
+        Gs. ${ 
+          Number(p.price)
+            .toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
         }
-      },
-      onScanSuccess
-    );
+      </td>
+      <td class="text-center">
+        <div class="input-group input-group-sm justify-content-center">
+          <button class="btn btn-outline-secondary" onclick="cambiarCantidad(${i}, -1)">−</button>
+          <input type="number" class="form-control text-center" value="${p.cantidad}" min="1"
+                 onchange="actualizarCantidad(${i}, this.value)">
+          <button class="btn btn-outline-secondary" onclick="cambiarCantidad(${i}, 1)">+</button>
+        </div>
+      </td>
+      <td class="text-end">Gs. ${ (p.price * p.cantidad).toLocaleString() }</td>
+    `;
+    cont.appendChild(tr);
+  });
 
+  document.getElementById("carrito-total").textContent = `Gs. ${total.toLocaleString()}`;
+}
+
+// Mostrar alerta de producto agregado y detener escáner
+function mostrarAlertaProducto(nombreProducto) {
+  const alerta = document.getElementById("product-added");
+  const backdrop = document.getElementById("product-added-backdrop");
+  const spanNombre = document.getElementById("product-name");
+
+  spanNombre.textContent = nombreProducto;
+  alerta.classList.remove("d-none");
+  backdrop.style.display = "block";
+  setTimeout(() => alerta.classList.add("show"), 10);
+
+  const wasScanning = scanning;
+  detenerEscaneo(); // Detener escaneo mientras aparece el mensaje
+
+  setTimeout(() => {
+    alerta.classList.remove("show");
+    setTimeout(() => {
+      alerta.classList.add("d-none");
+      backdrop.style.display = "none";
+      if (wasScanning) {
+        reanudarEscaneo();
+      }
+    }, 400);
+  }, 1500);
+}
+
+// Iniciar escáner
+function startScan() {
+
+  if (scanning) {
+    console.log("El escáner ya está activo.");
+    return;
+  }
+
+  document.getElementById("barcode-placeholder").style.display = "none";
+  document.getElementById("barcode-placeholder").style.visibility = "hidden";
+  iniciarEscaner();
+}
+
+// Configurar escáner
+function iniciarEscaner() {
+  
+  if (scanning) {
+    console.log("El escáner ya está activo.");
+    return;
+  }
+
+  html5Qr = new Html5Qrcode("reader");
+  html5Qr.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: function(viewfinderWidth, viewfinderHeight) {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        return { width: minEdge * 0.85, height: minEdge * 0.65 };
+      }
+    },
+    onScanSuccess
+  ).then(() => {
     scanning = true;
     startButton.classList.add("d-none");
     stopButton.classList.remove("d-none");
     resultBox.textContent = "Escaneando...";
     resultBox.classList.remove("d-none");
+    barcodePlaceholder.style.visibility = "hidden"; 
+  }).catch((err) => {
+    console.error("Error iniciando escáner:", err);
+    alert("Error al iniciar el escáner.");
+  });
+}
+
+// Detener escáner manualmente
+function stopScan() {
+  barcodePlaceholder.style.visibility = "visible";
+  startButton.classList.remove("d-none");
+  stopButton.classList.add("d-none");
+  resultBox.classList.add("d-none");
+  detenerEscaneo();
+}
+
+// Detener escáner temporalmente
+function detenerEscaneo() {
+  if (scanning && html5Qr) {
+    html5Qr.stop();
+    scanning = false;
+  }
+}
+
+// Reanudar escáner automáticamente
+function reanudarEscaneo() {
+  escaneando = false;
+  iniciarEscaner();
+}
+
+
+// Escanear producto y detener temporalmente
+function onScanSuccess(decodedText) {
+  if (escaneando) return;
+  escaneando = true;
+
+  resultBox.textContent = `Código escaneado: ${decodedText}`;
+  resultBox.classList.remove("d-none");
+
+  const producto = productos[decodedText];
+  if (producto) {
+    producto.upc = decodedText;
+    mostrarAlertaProducto(producto.name);
+    agregarAlCarrito(producto);
+  } else {
+    mostrarAlertaProducto(`Producto ${decodedText} no encontrado`);
   }
 
-  function stopScan() {
-    document.getElementById("barcode-placeholder").style.display = "flex";
-    document.getElementById("barcode-placeholder").style.visibility = "visible";
-    if (scanning && html5Qr) {
-      html5Qr.stop().then(() => {
-        scanning = false;
-        startButton.classList.remove("d-none");
-        stopButton.classList.add("d-none");
-      });
-    }
+  setTimeout(() => {
+    escaneando = false;
+  }, 500);
+}
+
+// Iniciar y detener con botones
+startButton.addEventListener("click", startScan);
+stopButton.addEventListener("click", stopScan);
+
+// ✅ ACTIVAR MODAL DE INGRESO MANUAL
+document.getElementById("btn-manual").addEventListener("click", () => {
+  detenerEscaneo();
+  const modal = new bootstrap.Modal(document.getElementById("manualModal"));
+  modal.show();
+});
+
+// ✅ FUNCION PARA AGREGAR PRODUCTO MANUALMENTE
+function agregarProductoManual() {
+  const codigoManual = document.getElementById("manual-code").value.trim();
+  if (!codigoManual) {
+    alert("Por favor, ingrese un código válido.");
+    return;
   }
 
-  startButton.addEventListener("click", startScan);
-  stopButton.addEventListener("click", stopScan);
+  const producto = productos[codigoManual];
+  if (producto) {
+    producto.upc = codigoManual;
+    mostrarAlertaProducto(producto.name);
+    agregarAlCarrito(producto);
+    renderizarCarrito();
+  } else {
+    alert(`Producto con código ${codigoManual} no encontrado.`);
+  }
+
+  const modal = bootstrap.Modal.getInstance(document.getElementById("manualModal"));
+  modal.hide();
+  document.getElementById("manual-code").value = "";
+
+}
+
+// Cambiar cantidad directamente
+function cambiarCantidad(index, valor) {
+  carrito[index].cantidad += valor;
+
+  if (carrito[index].cantidad <= 0) {
+    // Guardamos el índice y mostramos el modal
+    pendingIndex = index;
+    const confirmModal = new bootstrap.Modal(
+      document.getElementById('confirmDeleteModal')
+    );
+    confirmModal.show();
+    // Salimos aquí: el render lo haremos en los callbacks del modal
+    return;
+  }
+
+  // Cantidad válida, simplemente renderizamos
+  renderizarCarrito();
+}
+
+ // --- CALLBACK del botón "Eliminar" ---
+ confirmBtn.addEventListener('click', () => {
+      if (pendingIndex !== null) {
+        carrito.splice(pendingIndex, 1);
+        pendingIndex = null;
+        renderizarCarrito();
+      }
+      deleteModal.hide();
+    });
+
+    // --- CALLBACK del botón "Cancelar" ---
+    cancelBtn.addEventListener('click', () => {
+      if (pendingIndex !== null) {
+        carrito[pendingIndex].cantidad = 1;
+        pendingIndex = null;
+        renderizarCarrito();
+      }
+      // el propio data-bs-dismiss cierra el modal
+    });
+
 </script>
 {% endblock %}
+
