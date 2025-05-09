@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Compra{% endblock %}
+
+{% block head_extra %}
+  <style>
+    :root { --color-rojo: #D90429; }
+    body { background: #f5f7fa; }
+    .card-header { font-weight: 600; }
+    .table thead { background: var(--color-rojo); color: #fff; }
+    .table tfoot { background: #e9ecef; }
+    /* Botón “Confirmar Compra” */
+    #btn-confirm {
+      background: var(--color-rojo);
+      border: none;
+      border-radius: .5rem;
+      padding: 1rem 2rem;
+      transition: transform .2s, box-shadow .2s;
+      color: #fff;
+    }
+    #btn-confirm:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 20px rgba(0,0,0,.2);
+    }
+    #btn-confirm:active {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    }
+    /* Cabecera roja */
+    .bg-rojo {
+      background: var(--color-rojo) !important;
+      color: #fff !important;
+    }
+
+    <style>
+  /* Estilos del Modal de Éxito */
+  .modal-content {
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .modal-body h5 {
+    font-size: 1.5rem;
+    color: #4caf50;
+  }
+
+  .modal-body p {
+    color: #6c757d;
+  }
+
+  .modal-body i {
+    animation: bounce 1s infinite;
+  }
+
+  /* Animación del Icono */
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+      transform: translateY(0);
+    }
+    40% {
+      transform: translateY(-10px);
+    }
+    60% {
+      transform: translateY(-5px);
+    }
+  }
+
+    #qr-section {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px dashed #e9ecef;
+  }
+
+  #qr-section h4 {
+    color: #D90429;
+  }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row gy-4">
+
+  <!-- Sección para mostrar el QR después de la compra -->
+  <div id="qr-section" class="mt-4" style="display: none; text-align: center;">
+    <h4 class="fw-bold mb-3">📌 Tu Código QR de la Compra</h4>
+    <canvas id="qr-code"></canvas>
+    <p class="mt-2">Escanea este código para ver el detalle de tu compra.</p>
+  </div>
+
+
+    <!-- 1) Resumen de la compra -->
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-rojo">
+          <i class="bi bi-receipt me-2"></i>Resumen de tu compra
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead>
+                <tr>
+                  <th style="width:5%">#</th>
+                  <th>Producto</th>
+                  <th class="text-end" style="width:15%">Precio</th>
+                  <th class="text-center" style="width:10%">Cant.</th>
+                  <th class="text-end" style="width:15%">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody id="resumen-items"></tbody>
+              <tfoot class="fw-bold">
+                <tr>
+                  <td colspan="4" class="text-end">Total</td>
+                  <td id="resumen-total" class="text-end">Gs. 0</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2) Método de Pago -->
+    <div class="col-md-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-success text-white">
+          <i class="bi bi-credit-card me-2"></i>Método de Pago
+        </div>
+        <div class="card-body">
+          <p><strong>Tarjeta:</strong> **** **** **** 1234</p>
+          <p><strong>Titular:</strong> Juan Pérez</p>
+          <p><small class="text-muted">Edita estos datos en tu perfil</small></p>
+        </div>
+      </div>
+    </div>
+
+  <!-- 3) Datos para la Factura -->
+  <div class="col-md-6">
+    <div class="card shadow-sm h-100">
+      <div class="card-header bg-warning text-dark">
+        <i class="bi bi-file-earmark-text me-2"></i>Datos para la Factura
+      </div>
+      <div class="card-body">
+        <p><strong>Razón Social:</strong> <span id="razon-social">ACME S.A.</span></p>
+        <p><strong>RUC:</strong> <span id="ruc">80012345-6</span></p>
+        <p><strong>Dirección:</strong> Av. Siempre Viva 742</p>
+        <p><small class="text-muted">Edita estos datos en tu perfil</small></p>
+      </div>
+    </div>
+  </div>
+
+<!-- 4) Botón Confirmar Compra -->
+<div class="col-12 col-md-6 offset-md-3 d-grid">
+  <button id="btn-confirm" class="btn btn-lg shadow-lg"">
+    <i class="bi bi-bag-check me-2"></i>Confirmar Compra
+  </button>
+</div>
+
+
+
+<!-- Modal de éxito (estilizado y animado) -->
+<div class="modal fade" id="purchaseModal" tabindex="-1" aria-labelledby="purchaseModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-4">
+      <div class="modal-body">
+        <div class="mb-3">
+          <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+        </div>
+        <h5 class="modal-title mb-3 fw-bold">¡Compra Confirmada!</h5>
+        <p>Gracias por tu compra. Recibirás una confirmación en tu correo.</p>
+        <button type="button" class="btn btn-success mt-3 w-100" data-bs-dismiss="modal" onclick="window.location.href='/'">
+          Volver al Inicio
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block scripts %}
+  <!-- 1) Cargar Bootstrap Bundle con SRI correcto -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+    crossorigin="anonymous"
+  ></script>
+
+  <!-- Librería para generar el QR -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    
+    cargarDatosFactura();
+    renderResumen();
+
+    // Verificar y agregar el evento al botón
+    document.getElementById('btn-confirm').addEventListener('click', confirmarCompra);
+  });
+
+  // ✅ Cargar los datos del cliente desde LocalStorage para la factura
+  function cargarDatosFactura() {
+    const nombre = localStorage.getItem('cliente_nombre') || 'Juan Pérez';
+    const cedula = localStorage.getItem('cliente_cedula') || '0000000-0';
+    document.getElementById('razon-social').textContent = nombre;
+    document.getElementById('ruc').textContent = cedula;
+  }
+
+  // Leer carrito de localStorage
+  const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+
+  // Formatear miles
+  const fmt = n => Math.trunc(n)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+  // Renderizar tabla de resumen
+  function renderResumen() {
+    let total = 0, html = '';
+    carrito.forEach((p, i) => {
+      const sub = p.price * p.cantidad;
+      total += sub;
+      html += `
+        <tr>
+          <td>${i+1}</td>
+          <td>${p.name}</td>
+          <td class="text-end">Gs. ${fmt(p.price)}</td>
+          <td class="text-center">${p.cantidad}</td>
+          <td class="text-end">Gs. ${fmt(sub)}</td>
+        </tr>`;
+    });
+    document.getElementById('resumen-items').innerHTML = html;
+    document.getElementById('resumen-total').textContent = `Gs. ${fmt(total)}`;
+  }
+
+  // Enviar datos al backend y generar QR
+  async function confirmarCompra() {
+    const datosFactura = document.querySelector('.card-header.bg-warning').nextElementSibling;
+    const clienteNombre = datosFactura.querySelector('p:nth-of-type(1)').innerText.split(':')[1].trim();
+    const clienteCedula = datosFactura.querySelector('p:nth-of-type(2)').innerText.split(':')[1].trim();
+
+    const total = carrito.reduce((acc, p) => acc + (p.price * p.cantidad), 0);
+
+    const response = await fetch("/guardar_compra", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        nombre: clienteNombre,
+        cedula: clienteCedula,
+        total,
+        productos: carrito
+      })
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      mostrarQR(result.qr_content || "Compra Confirmada: " + Math.random().toString(36).substring(2, 10));
+    } else {
+      alert("❌ Error al guardar la compra.");
+    }
+  }
+
+  // Mostrar QR y ocultar secciones de pago y cliente
+  function mostrarQR(qrContent) {
+    // Ocultar método de pago y datos del cliente
+    document.querySelector('.card-header.bg-success').parentElement.style.display = 'none';
+    document.querySelector('.card-header.bg-warning').parentElement.style.display = 'none';
+    document.getElementById('btn-confirm').style.display = 'none';
+
+    // Generar QR dinámicamente
+    const qr = new QRious({
+      element: document.getElementById('qr-code'),
+      value: qrContent,
+      size: 200
+    });
+
+    // Mostrar la sección de QR
+    document.getElementById('qr-section').style.display = 'block';
+  }
+</script>
+
+
+
+{% endblock %}

@@ -1,3 +1,120 @@
 {% extends 'base.html' %}
-{% block title %}Perfil{% endblock %}
-{% block content %}<h3>Perfil del Cliente</h3>{% endblock %}
+
+{% block title %}Perfil del Cliente{% endblock %}
+
+{% block head_extra %}
+<style>
+  body {
+    background-color: #f5f7fa;
+  }
+
+  .card {
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-header {
+    background-color: var(--color-rojo);
+    color: #fff;
+    font-weight: bold;
+    font-size: 1.2rem;
+    text-align: center;
+  }
+
+  .form-label {
+    font-weight: 600;
+  }
+
+  .btn-save {
+    background-color: var(--color-rojo);
+    color: #fff;
+    font-weight: bold;
+    border: none;
+    transition: background 0.3s;
+  }
+
+  .btn-save:hover {
+    background-color: #A90322;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <h1 class="mb-4 text-center">Perfil del Cliente</h1>
+  <div class="card mx-auto" style="max-width: 500px;">
+    <div class="card-header">
+      Información del Cliente
+    </div>
+    <div class="card-body">
+      <form id="form-perfil">
+        <div class="mb-3">
+          <label for="nombre" class="form-label">Nombre Completo</label>
+          <input type="text" class="form-control" id="nombre" placeholder="Juan Pérez">
+        </div>
+        <div class="mb-3">
+          <label for="cedula" class="form-label">Cédula</label>
+          <input type="text" class="form-control" id="cedula" placeholder="0000000-0">
+        </div>
+        <div class="d-grid">
+          <button type="button" class="btn btn-save" onclick="guardarPerfil()">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de éxito -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title">¡Perfil Actualizado!</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        Tu información ha sido guardada correctamente.
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+
+<!-- ✅ 1) Bootstrap Bundle con Popper (JS completo) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+<!-- ✅ 2) Librería para generar el QR -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    cargarPerfil();
+  });
+
+  // ✅ Cargar los datos del cliente desde LocalStorage (con valores por defecto)
+  function cargarPerfil() {
+    const nombre = localStorage.getItem('cliente_nombre') || 'Juan Pérez';
+    const cedula = localStorage.getItem('cliente_cedula') || '0000000-0';
+
+    document.getElementById('nombre').value = nombre;
+    document.getElementById('cedula').value = cedula;
+  }
+
+  // ✅ Guardar los datos del cliente en LocalStorage
+  function guardarPerfil() {
+    const nombre = document.getElementById('nombre').value.trim() || 'Juan Pérez';
+    const cedula = document.getElementById('cedula').value.trim() || '0000000-0';
+
+    localStorage.setItem('cliente_nombre', nombre);
+    localStorage.setItem('cliente_cedula', cedula);
+
+    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+    modal.show();
+  }
+</script>
+{% endblock %}

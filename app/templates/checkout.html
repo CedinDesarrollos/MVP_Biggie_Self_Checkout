@@ -160,6 +160,16 @@
   </div>
 </div>
 
+
+<!-- Botón “Ir a pagar” justo encima del carrito -->
+<button 
+  id="btn-pagar"
+  class="btn btn-success btn-lg w-100 mb-3 mt-3 d-none"
+>
+  <i class="bi bi-credit-card-fill me-2"></i>
+  Ir a pagar
+</button>
+
 <div class="card shadow-sm mb-4  mt-3">
   <div class="card-header text-white d-flex align-items-center" 
        style="background-color: #d90429">
@@ -261,6 +271,7 @@ function agregarAlCarrito(producto) {
 // Renderizar carrito
 function renderizarCarrito() {
   const cont = document.getElementById("carrito-items");
+  const pagarBtn = document.getElementById("btn-pagar");
   cont.innerHTML = "";
   let total = 0;
 
@@ -285,12 +296,29 @@ function renderizarCarrito() {
         </div>
       </td>
       <td class="text-end">Gs. ${ (p.price * p.cantidad).toLocaleString() }</td>
+      <input type="hidden" name="upc[]" value="${p.upc}">
     `;
     cont.appendChild(tr);
+    localStorage.setItem('carrito', JSON.stringify(carrito));
   });
 
   document.getElementById("carrito-total").textContent = `Gs. ${total.toLocaleString()}`;
+   // Mostrar u ocultar el botón
+  if (carrito.length > 0) {
+    pagarBtn.classList.remove("d-none");
+  } else {
+    pagarBtn.classList.add("d-none");
+  }
+
+  
 }
+
+// Listener para “Ir a pagar”
+document.getElementById("btn-pagar")
+  .addEventListener("click", () => {
+    localStorage.setItem('carrito', JSON.stringify(carrito)); // Guardamos el carrito completo
+    window.location.href = "/confirmar_pago";
+});
 
 // Mostrar alerta de producto agregado y detener escáner
 function mostrarAlertaProducto(nombreProducto) {
