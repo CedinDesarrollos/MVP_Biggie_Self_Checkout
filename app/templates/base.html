@@ -23,16 +23,23 @@
 
   <!-- Menú lateral -->
   <div class="offcanvas offcanvas-start" tabindex="-1" id="menuLateral">
-    <div class="offcanvas-header">
-      <h5 class="offcanvas-title">Menú</h5>
-      <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body d-flex flex-column">
-      <a href="{{ url_for('main.checkout') }}" class="btn btn-rojo mb-2">🛒 Self Checkout</a>
-      <a href="{{ url_for('main.historico') }}" class="btn btn-rojo mb-2">📑 Historial de Compras</a>
-      <a href="{{ url_for('main.perfil') }}" class="btn btn-rojo mb-2">👤 Datos del Cliente</a>
-    </div>
+      <div class="offcanvas-header">
+          <h5 class="offcanvas-title">Menú</h5>
+          <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+      </div>
+      <div class="offcanvas-body d-flex flex-column">
+          <a href="{{ url_for('main.checkout') }}" class="btn btn-rojo mb-2">🛒 Self Checkout</a>
+          <a href="{{ url_for('main.historico') }}" class="btn btn-rojo mb-2">📑 Historial de Compras</a>
+          <a href="{{ url_for('main.perfil') }}" class="btn btn-rojo mb-2">👤 Datos del Cliente</a>
+
+          <!-- Separador visual -->
+          <hr class="my-3" style="border-top: 1px solid #D90429; opacity: 0.8;">
+
+          <!-- Nueva opción -->
+          <a href="{{ url_for('main.obtener_facturas') }}" class="btn btn-rojo mb-2">📋 Controlar Facturas</a>
+      </div>
   </div>
+
 
   <!-- Contenido principal -->
   <div class="container mt-3">
@@ -41,6 +48,7 @@
 
   {% block scripts %}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
   <script
   src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
   integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+Pm8m6Q1YvoRSJo0ieGizqPLForn"

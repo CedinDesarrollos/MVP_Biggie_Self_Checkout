@@ -248,33 +248,44 @@
 
     const total = carrito.reduce((acc, p) => acc + (p.price * p.cantidad), 0);
 
+    const facturaData = {
+      nombre: clienteNombre,
+      cedula: clienteCedula,
+      total,
+      productos: carrito
+    };
+
     const response = await fetch("/guardar_compra", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        nombre: clienteNombre,
-        cedula: clienteCedula,
-        total,
-        productos: carrito
-      })
+      body: JSON.stringify(facturaData)
     });
 
     const result = await response.json();
     if (result.success) {
-      mostrarQR(result.qr_content || "Compra Confirmada: " + Math.random().toString(36).substring(2, 10));
+      mostrarQR(facturaData);
     } else {
       alert("❌ Error al guardar la compra.");
     }
   }
 
   // Mostrar QR y ocultar secciones de pago y cliente
-  function mostrarQR(qrContent) {
+  function mostrarQR(facturaData) {
     // Ocultar método de pago y datos del cliente
     document.querySelector('.card-header.bg-success').parentElement.style.display = 'none';
     document.querySelector('.card-header.bg-warning').parentElement.style.display = 'none';
     document.getElementById('btn-confirm').style.display = 'none';
+
+    // Generar contenido del QR como JSON
+    const qrContent = JSON.stringify({
+      nro_ticket: Math.random().toString(36).substring(2, 10),
+      cliente_nombre: facturaData.nombre,
+      cliente_cedula: facturaData.cedula,
+      total: facturaData.total,
+      productos: facturaData.productos
+    });
 
     // Generar QR dinámicamente
     const qr = new QRious({
@@ -282,6 +293,8 @@
       value: qrContent,
       size: 200
     });
+
+    console.log("✅ QR Generado:", qrContent);
 
     // Mostrar la sección de QR
     document.getElementById('qr-section').style.display = 'block';

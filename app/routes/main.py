@@ -29,6 +29,14 @@ def perfil():
 def confirmar_pago():
     return render_template('confirmar_pago.html')
 
+@main_bp.route('/obtener_facturas')
+def obtener_facturas():
+    return render_template('obtener_facturas.html')
+
+@main_bp.route('/controlar_facturas')
+def controlar_facturas():
+    return render_template('controlar_facturas.html')
+
 @main_bp.route('/guardar_compra', methods=['POST'])
 def guardar_compra():
     try:
