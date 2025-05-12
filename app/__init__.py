@@ -1,3 +1,4 @@
+# app/__init__.py
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -17,13 +18,10 @@ def create_app():
     # Inicializar la base de datos
     db.init_app(app)
 
-    # Registrar el blueprint
-    from .routes.main import main_bp
-    app.register_blueprint(main_bp)
-    
-    # Cargar productos en caché después de inicializar la app
+    # Registrar el blueprint dentro del contexto de la aplicación
     with app.app_context():
-        from .routes.main import cargar_productos_cache
+        from app.routes.main import main_bp, cargar_productos_cache
+        app.register_blueprint(main_bp)
         cargar_productos_cache()  # Cargar productos en caché al iniciar
-
+    
     return app
