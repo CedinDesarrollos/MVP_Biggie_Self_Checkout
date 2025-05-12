@@ -107,22 +107,42 @@
       { facingMode: "environment" },
       {
         fps: 10,
-        qrbox: 250
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          
+          // ✅ Ajuste para dispositivos móviles
+          const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+          const width = isMobile ? Math.min(minEdge * 0.9, 400) : minEdge * 0.85;
+          const height = isMobile ? Math.min(minEdge * 0.9, 400) : minEdge * 0.65;
+
+          return { width, height };
+        }
       },
       (decodedText) => {
-        console.log("QR Detectado:", decodedText);
+        console.log("✅ QR Detectado:", decodedText);
         procesarFactura(decodedText);
-        qrReader.stop();
-        qrReader = null;
-        btnEscaneo.textContent = "Iniciar Escaneo";
-        btnEscaneo.classList.remove("btn-secondary");
-        btnEscaneo.classList.add("btn-rojo");
+
+        // ✅ Detener el escaneo de forma segura
+        qrReader.stop().then(() => {
+          qrReader = null;
+          console.log("✅ Escaneo detenido.");
+
+          // ✅ Cambiar texto y estilos del botón
+          btnEscaneo.textContent = "Iniciar Escaneo";
+          btnEscaneo.classList.remove("btn-secondary");
+          btnEscaneo.classList.add("btn-rojo");
+        }).catch((err) => {
+          console.error("❌ Error al detener el escaneo:", err);
+        });
       },
       (errorMessage) => {
-        console.log("Error de lectura:", errorMessage);
+        // ✅ Filtrar errores repetitivos
+        if (errorMessage !== "No MultiFormat Readers were able to detect the code.") {
+          console.log("❌ Error de lectura:", errorMessage);
+        }
       }
     ).catch((err) => {
-      console.error("Error al iniciar la cámara:", err);
+      console.error("❌ Error al iniciar la cámara:", err);
     });
   }
 

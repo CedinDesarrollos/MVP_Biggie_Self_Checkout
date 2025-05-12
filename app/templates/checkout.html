@@ -371,12 +371,21 @@ function iniciarEscaner() {
   html5Qr.start(
     { facingMode: "environment" },
     {
-      fps: 10,
-      qrbox: function(viewfinderWidth, viewfinderHeight) {
+    fps: 10,
+    qrbox: function(viewfinderWidth, viewfinderHeight) {
+      // Detectar si es un dispositivo móvil
+      const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        // Tamaño fijo para dispositivos móviles (más grande)
+        return { width: 300, height: 300 };
+      } else {
+        // Tamaño dinámico para pantallas grandes (desktop)
         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
         return { width: minEdge * 0.85, height: minEdge * 0.65 };
       }
-    },
+    }
+  },
     onScanSuccess
   ).then(() => {
     scanning = true;

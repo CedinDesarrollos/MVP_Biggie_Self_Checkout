@@ -174,19 +174,27 @@
 
     qrReader.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: function(viewfinderWidth, viewfinderHeight) {
-        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        return { width: minEdge * 0.85, height: minEdge * 0.65 };
-      } },
+      {
+        fps: 10,
+        qrbox: function(viewfinderWidth, viewfinderHeight) {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+
+          // Ajuste dinámico mejorado para móviles
+          const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+          const width = isMobile ? Math.min(minEdge * 0.9, 400) : minEdge * 0.85;
+          const height = isMobile ? Math.min(minEdge * 0.9, 400) : minEdge * 0.65;
+
+          return { width, height };
+        }
+      },
       (decodedText) => {
         if (decodedText) {
           console.log("Producto Escaneado:", decodedText);
           verificarProducto(decodedText);
-          detenerEscaneo();  // Detener escaneo solo si se escanea correctamente
+          qrReader.stop().catch((err) => console.error("Error al detener el escaneo:", err));  // Detener escaneo solo si se escanea correctamente
         }
       },
       (errorMessage) => {
-        // Evitar múltiples errores en consola
         if (errorMessage !== "No MultiFormat Readers were able to detect the code.") {
           console.log("Error de lectura:", errorMessage);
         }
